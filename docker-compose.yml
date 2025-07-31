@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Coverage Collector Service
+  coverage-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    container_name: coverage-collector
+    ports:
+      - "9090:9090"  # gRPC port
+      - "8081:8081"  # Health check port
+    volumes:
+      - coverage-data:/data
+      - ./coverage-collector/src/main/resources/coverage-collector.yml:/app/coverage-collector.yml
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - coverage-network
+    restart: unless-stopped
+
+  # Example Java Application with Coverage Agent
+  sample-app:
+    build:
+      context: .
+      dockerfile: examples/sample-java-app/Dockerfile
+    container_name: sample-app
+    depends_on:
+      coverage-collector:
+        condition: service_healthy
+    volumes:
+      - coverage-data:/data
+    environment:
+      - JAVA_OPTS=-javaagent:/app/coverage-agent.jar -Xmx256m
+      - COVERAGE_COLLECTOR_HOST=coverage-collector
+      - COVERAGE_COLLECTOR_PORT=9090
+    networks:
+      - coverage-network
+    restart: unless-stopped
+
+  # Coverage Dashboard (Optional - for visualization)
+  coverage-dashboard:
+    image: nginx:alpine
+    container_name: coverage-dashboard
+    ports:
+      - "8080:80"
+    volumes:
+      - ./dashboard/html:/usr/share/nginx/html:ro
+      - coverage-data:/data:ro
+    depends_on:
+      - coverage-collector
+    networks:
+      - coverage-network
+    restart: unless-stopped
+
+  # Development tools
+  grpcui:
+    image: fullstorydev/grpcui:latest
+    container_name: grpcui
+    ports:
+      - "8082:8080"
+    command: ["-plaintext", "coverage-collector:9090"]
+    depends_on:
+      - coverage-collector
+    networks:
+      - coverage-network
+    profiles:
+      - dev
+
+volumes:
+  coverage-data:
+    driver: local
+
+networks:
+  coverage-network:
+    driver: bridge

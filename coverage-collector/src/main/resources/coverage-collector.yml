@@ -1,0 +1,25 @@
+agent:
+  id: collector
+  language: multi
+  version: 1.0.0
+  enabled: true
+  metadata:
+    environment: development
+
+collector:
+  host: 0.0.0.0
+  port: 9090
+  tls_enabled: false
+  connection_timeout_ms: 5000
+  retry_attempts: 3
+  batch_size: 1000
+  flush_interval_ms: 5000
+
+instrumentation:
+  enabled: false
+
+output:
+  format: json
+  file_path: "/data/coverage-reports"
+  console_enabled: true
+  detailed: true

@@ -1,0 +1,19 @@
+# Java Coverage Agent runtime image
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# Copy pre-built agent jar
+COPY coverage-agent/target/coverage-agent-1.0.0-SNAPSHOT.jar coverage-agent.jar
+
+# Copy configuration
+COPY coverage-agent/src/main/resources/coverage-agent.yml .
+
+# Create directory for agent data
+RUN mkdir -p /data
+
+# Expose agent for debugging
+EXPOSE 8080
+
+# The agent will be attached to target applications via -javaagent
+CMD ["echo", "Coverage Agent image ready. Use -javaagent:/app/coverage-agent.jar"]

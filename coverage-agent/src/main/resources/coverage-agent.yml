@@ -1,0 +1,42 @@
+agent:
+  id: java-agent
+  language: java
+  version: 1.0.0
+  enabled: true
+  metadata:
+    environment: development
+
+collector:
+  host: localhost
+  port: 9090
+  tls_enabled: false
+  connection_timeout_ms: 5000
+  retry_attempts: 3
+  batch_size: 100
+  flush_interval_ms: 1000
+
+instrumentation:
+  enabled: true
+  include_patterns:
+    - "com/example/**/*"
+    - "org/mycompany/**/*"
+  exclude_patterns:
+    - "java/**/*"
+    - "javax/**/*"
+    - "sun/**/*"
+    - "com/sun/**/*"
+    - "**/*Test*"
+    - "**/*test*"
+    - "**/test/**/*"
+    - "**/tests/**/*"
+  coverage_types:
+    - line
+    - branch
+    - method
+  sampling_rate: 1.0
+
+output:
+  format: json
+  file_path: ""
+  console_enabled: true
+  detailed: false

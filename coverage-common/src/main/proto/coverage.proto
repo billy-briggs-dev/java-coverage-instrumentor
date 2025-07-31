@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package coverage.v1;
+
+option java_package = "dev.billybriggs.coverage.common.proto";
+option java_outer_classname = "CoverageProto";
+
+import "google/protobuf/timestamp.proto";
+
+// Coverage data service for streaming coverage information
+service CoverageService {
+  // Stream coverage data from agents to collector
+  rpc StreamCoverageData(stream CoverageData) returns (stream CoverageResponse);
+  
+  // Get coverage summary for a session
+  rpc GetCoverageSummary(CoverageSummaryRequest) returns (CoverageSummary);
+  
+  // Register an agent with the collector
+  rpc RegisterAgent(AgentRegistration) returns (AgentRegistrationResponse);
+}
+
+// Agent registration information
+message AgentRegistration {
+  string agent_id = 1;
+  string language = 2;
+  string version = 3;
+  string hostname = 4;
+  string process_id = 5;
+  map<string, string> metadata = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+message AgentRegistrationResponse {
+  bool success = 1;
+  string message = 2;
+  string session_id = 3;
+}
+
+// Coverage data from agents
+message CoverageData {
+  string session_id = 1;
+  string agent_id = 2;
+  string language = 3;
+  repeated ExecutionPoint execution_points = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  map<string, string> metadata = 6;
+}
+
+// Individual execution point (line/branch/method coverage)
+message ExecutionPoint {
+  string file_path = 1;
+  string class_name = 2;
+  string method_name = 3;
+  int32 line_number = 4;
+  CoverageType type = 5;
+  int64 hit_count = 6;
+  google.protobuf.Timestamp first_hit = 7;
+  google.protobuf.Timestamp last_hit = 8;
+  map<string, string> metadata = 9;
+}
+
+// Types of coverage points
+enum CoverageType {
+  COVERAGE_TYPE_UNSPECIFIED = 0;
+  COVERAGE_TYPE_LINE = 1;
+  COVERAGE_TYPE_BRANCH = 2;
+  COVERAGE_TYPE_METHOD = 3;
+  COVERAGE_TYPE_CLASS = 4;
+}
+
+// Response from collector to agent
+message CoverageResponse {
+  bool success = 1;
+  string message = 2;
+  int32 points_processed = 3;
+}
+
+// Request for coverage summary
+message CoverageSummaryRequest {
+  string session_id = 1;
+  repeated string file_paths = 2;
+  CoverageType type_filter = 3;
+}
+
+// Coverage summary response
+message CoverageSummary {
+  string session_id = 1;
+  repeated FileCoverage file_coverages = 2;
+  CoverageStats overall_stats = 3;
+  google.protobuf.Timestamp generated_at = 4;
+}
+
+// Coverage information for a specific file
+message FileCoverage {
+  string file_path = 1;
+  repeated ExecutionPoint execution_points = 2;
+  CoverageStats stats = 3;
+}
+
+// Coverage statistics
+message CoverageStats {
+  int32 total_lines = 1;
+  int32 covered_lines = 2;
+  int32 total_branches = 3;
+  int32 covered_branches = 4;
+  int32 total_methods = 5;
+  int32 covered_methods = 6;
+  double line_coverage_percentage = 7;
+  double branch_coverage_percentage = 8;
+  double method_coverage_percentage = 9;
+}
